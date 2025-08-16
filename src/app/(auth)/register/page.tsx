@@ -43,10 +43,10 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <form onSubmit={handleSubmit} className="w-full max-w-md rounded-lg bg-white p-6 shadow-md">
-        <h1 className="mb-6 text-2xl font-bold text-center">Create Account</h1>
+        <h1 className="mb-6 text-center text-2xl font-bold">Create Account</h1>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Username</label>
+          <label className="mb-1 block text-sm font-medium">Username</label>
           <input
             name="username"
             type="text"
@@ -54,11 +54,11 @@ export default function RegisterPage() {
             value={formData.username}
             onChange={handleChange}
           />
-          {errors.username && <p className="text-sm text-red-500 mt-1">{errors.username}</p>}
+          {errors.username && <p className="mt-1 text-sm text-red-500">{errors.username}</p>}
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Password</label>
+          <label className="mb-1 block text-sm font-medium">Password</label>
           <input
             name="password"
             type="password"
@@ -66,10 +66,10 @@ export default function RegisterPage() {
             value={formData.password}
             onChange={handleChange}
           />
-          {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password}</p>}
+          {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
         </div>
 
-        <button type="submit" className="w-full rounded bg-blue-500 py-2 text-white hover:bg-blue-600 transition">
+        <button type="submit" className="w-full rounded bg-blue-500 py-2 text-white transition hover:bg-blue-600">
           Sign Up
         </button>
       </form>

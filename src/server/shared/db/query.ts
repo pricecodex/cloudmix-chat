@@ -73,11 +73,7 @@ export class Query {
     return { items: Items as EntitySchema<T>[], lastKey: LastEvaluatedKey };
   }
 
-  static async update<T extends Entity>(
-    entity: T,
-    primaryKey: string,
-    value: Partial<EntitySchema<T>>,
-  ) {
+  static async update<T extends Entity>(entity: T, primaryKey: string, value: Partial<EntitySchema<T>>) {
     await this.createIfNeeded(entity);
     const setExpression = Object.keys(value)
       .map((column) => `${column} = :${column}`)
@@ -117,11 +113,7 @@ export class Query {
       ],
       KeySchema: [
         { AttributeName: entity.primaryKey.name, KeyType: PRIMARY_KEY },
-        ...(entity.sortKey
-          ? ([
-              { AttributeName: entity.sortKey.name, KeyType: SORT_KEY },
-            ] as const)
-          : []),
+        ...(entity.sortKey ? ([{ AttributeName: entity.sortKey.name, KeyType: SORT_KEY }] as const) : []),
       ],
       BillingMode: BILLING_MODE,
     });
@@ -134,12 +126,7 @@ export class Query {
       await db.send(new DescribeTableCommand({ TableName: entity.tableName }));
       return true;
     } catch (err) {
-      if (
-        typeof err === "object" &&
-        err !== null &&
-        "name" in err &&
-        err.name === "ResourceNotFoundException"
-      ) {
+      if (typeof err === "object" && err !== null && "name" in err && err.name === "ResourceNotFoundException") {
         return false;
       }
       throw err;

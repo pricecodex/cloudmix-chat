@@ -8,12 +8,6 @@ export async function hashPassword(password: string, salt: string) {
   const ITERATIONS = 100_000; // OWASP recommends 100k+ for PBKDF2
   const KEY_LENGTH = 64; // 64 bytes = 512 bits
 
-  const derivedKey = await pbkdf2Async(
-    password,
-    salt,
-    ITERATIONS,
-    KEY_LENGTH,
-    HASH_ALGO,
-  );
+  const derivedKey = await pbkdf2Async(password, salt, ITERATIONS, KEY_LENGTH, HASH_ALGO);
   return derivedKey.toString("hex");
 }
