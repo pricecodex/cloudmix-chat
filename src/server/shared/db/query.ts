@@ -4,17 +4,13 @@ import {
   DeleteItemCommand,
   DescribeTableCommand,
   QueryCommand,
-  ScanCommand,
 } from "@aws-sdk/client-dynamodb";
 import { Entity } from "./entity";
 import { GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { db } from "./db";
-import { BILLING_MODE, PRIMARY_KEY } from "./constants";
+import { BILLING_MODE, PRIMARY_KEY, SORT_KEY } from "../constants";
 
-type EntitySchema<T> =
-  T extends Entity<infer Schema, infer PK>
-    ? Schema & Record<PK, string>
-    : never;
+type EntitySchema<T> = T extends Entity<infer Schema> ? Schema : never;
 
 export class Query {
   static async get<T extends Entity>(entity: T, value: string) {
@@ -77,10 +73,10 @@ export class Query {
     return { items: Items as EntitySchema<T>[], lastKey: LastEvaluatedKey };
   }
 
-  static async update(
-    entity: Entity,
+  static async update<T extends Entity>(
+    entity: T,
     primaryKey: string,
-    value: Partial<EntitySchema<Entity>>,
+    value: Partial<EntitySchema<T>>,
   ) {
     await this.createIfNeeded(entity);
     const setExpression = Object.keys(value)
@@ -110,9 +106,22 @@ export class Query {
           AttributeName: entity.primaryKey.name,
           AttributeType: entity.primaryKey.type,
         },
+        ...(entity.sortKey
+          ? [
+              {
+                AttributeName: entity.sortKey.name,
+                AttributeType: entity.sortKey.type,
+              },
+            ]
+          : []),
       ],
       KeySchema: [
         { AttributeName: entity.primaryKey.name, KeyType: PRIMARY_KEY },
+        ...(entity.sortKey
+          ? ([
+              { AttributeName: entity.sortKey.name, KeyType: SORT_KEY },
+            ] as const)
+          : []),
       ],
       BillingMode: BILLING_MODE,
     });

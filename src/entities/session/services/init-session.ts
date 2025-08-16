@@ -2,7 +2,7 @@ import { Query } from "@/server/shared/db/query";
 import { InitSessionDto } from "../dtos/init-session.dto";
 import { Session } from "../session.entity";
 import { randomBytes } from "crypto";
-import { MAX_SHORT_VARCHAR } from "@/server/shared/db/constants";
+import { MAX_SHORT_VARCHAR } from "@/server/shared/constants";
 import { findSession } from "./find-sesssion";
 
 export async function initSession(dto: InitSessionDto) {
@@ -14,9 +14,9 @@ export async function initSession(dto: InitSessionDto) {
   const token = randomBytes(Math.ceil(MAX_SHORT_VARCHAR / 2)).toString("hex");
   const newSession = {
     token,
-    status: "active",
     username: dto.username,
-  } as const;
+    connectionId: null,
+  };
 
   await Query.create(Session, newSession);
   return newSession;

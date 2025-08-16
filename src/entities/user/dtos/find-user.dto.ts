@@ -1,4 +1,4 @@
-import { MAX_SHORT_VARCHAR } from "@/server/shared/db/constants";
+import { MAX_SHORT_VARCHAR } from "@/server/shared/constants";
 import z from "zod";
 
 export const findUserDto = z.object({

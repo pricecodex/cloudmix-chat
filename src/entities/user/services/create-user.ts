@@ -3,7 +3,7 @@ import { CreateUserDto } from "../dtos/create-user.dto";
 import { User } from "../user.entity";
 import { BadRequestException } from "@/server/shared/exceptions/bad-request.exception";
 import { randomBytes } from "crypto";
-import { MAX_SHORT_VARCHAR } from "@/server/shared/db/constants";
+import { MAX_SHORT_VARCHAR } from "@/server/shared/constants";
 import { hashPassword } from "./hash-user-password";
 
 export async function createUser(dto: CreateUserDto) {
