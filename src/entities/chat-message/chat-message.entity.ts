@@ -1,18 +1,12 @@
-// at most 10k chars in each message
-// /chats/{id}/messages messages_limit_10
-//
-// [message19]
-// [message18]
-//
-// [message17]
-// [message16]
-//
-// [message15]
-// [message14]
-//
-// [message13]
-// [message12]
-//
-// [message11]
-// [message10]
-export {};
+import { Entity } from "@/server/shared/db/entity";
+import { ScalarAttributeType } from "@aws-sdk/client-dynamodb";
+
+export const ChatMessage: Entity<
+  { chatId: string; createdAt: string; content: string; owner: string },
+  "chatId",
+  "createdAt"
+> = {
+  primaryKey: { type: ScalarAttributeType.S, name: "chatId" },
+  sortKey: { type: ScalarAttributeType.S, name: "createdAt" },
+  tableName: "ChatMessages",
+};

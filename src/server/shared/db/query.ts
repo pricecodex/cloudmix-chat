@@ -1,37 +1,24 @@
-import {
-  AttributeValue,
-  CreateTableCommand,
-  DeleteItemCommand,
-  DescribeTableCommand,
-  QueryCommand,
-} from "@aws-sdk/client-dynamodb";
-import { Entity } from "./entity";
+import { AttributeValue, DeleteItemCommand, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { db } from "./db";
-import { BILLING_MODE, PRIMARY_KEY, SORT_KEY } from "../constants";
+import { Entity } from "./entity";
 
 type EntitySchema<T> = T extends Entity<infer Schema> ? Schema : never;
 
 export class Query {
   static async get<T extends Entity>(entity: T, value: string) {
-    try {
-      await this.createIfNeeded(entity);
-      const command = new GetCommand({
-        TableName: entity.tableName,
-        Key: { [entity.primaryKey.name]: value },
-      });
-      const { Item } = await db.send(command);
-      if (!Item) {
-        return null;
-      }
-      return Item as EntitySchema<T>;
-    } catch {
+    const command = new GetCommand({
+      TableName: entity.tableName,
+      Key: { [entity.primaryKey.name]: value },
+    });
+    const { Item } = await db.send(command);
+    if (!Item) {
       return null;
     }
+    return Item as EntitySchema<T>;
   }
 
   static async create<T extends Entity>(entity: T, value: EntitySchema<T>) {
-    await this.createIfNeeded(entity);
     await db.send(
       new PutCommand({
         TableName: entity.tableName,
@@ -41,7 +28,6 @@ export class Query {
   }
 
   static async remove<T extends Entity>(entity: T, primaryKey: string) {
-    await this.createIfNeeded(entity);
     await db.send(
       new DeleteItemCommand({
         TableName: entity.tableName,
@@ -59,7 +45,6 @@ export class Query {
       after?: Record<string, AttributeValue>;
     },
   ) {
-    await this.createIfNeeded(entity);
     const { Items, LastEvaluatedKey } = await db.send(
       new QueryCommand({
         TableName: entity.tableName,
@@ -74,62 +59,19 @@ export class Query {
   }
 
   static async update<T extends Entity>(entity: T, primaryKey: string, value: Partial<EntitySchema<T>>) {
-    await this.createIfNeeded(entity);
     const setExpression = Object.keys(value)
       .map((column) => `${column} = :${column}`)
       .join(", ");
+    const setValues = Object.fromEntries(Object.entries(value).map(([key, value]) => [`:${key}`, value]));
 
     await db.send(
       new UpdateCommand({
-        TableName: "Users",
+        TableName: entity.tableName,
         Key: { [entity.primaryKey.name]: primaryKey },
         UpdateExpression: `SET ${setExpression}`,
-        ExpressionAttributeValues: value,
+        ExpressionAttributeValues: setValues,
         ReturnValues: "NONE",
       }),
     );
-  }
-
-  private static async createIfNeeded(entity: Entity) {
-    if (await this.tableExists(entity)) {
-      return;
-    }
-
-    const command = new CreateTableCommand({
-      TableName: entity.tableName,
-      AttributeDefinitions: [
-        {
-          AttributeName: entity.primaryKey.name,
-          AttributeType: entity.primaryKey.type,
-        },
-        ...(entity.sortKey
-          ? [
-              {
-                AttributeName: entity.sortKey.name,
-                AttributeType: entity.sortKey.type,
-              },
-            ]
-          : []),
-      ],
-      KeySchema: [
-        { AttributeName: entity.primaryKey.name, KeyType: PRIMARY_KEY },
-        ...(entity.sortKey ? ([{ AttributeName: entity.sortKey.name, KeyType: SORT_KEY }] as const) : []),
-      ],
-      BillingMode: BILLING_MODE,
-    });
-
-    await db.send(command);
-  }
-
-  private static async tableExists(entity: Entity) {
-    try {
-      await db.send(new DescribeTableCommand({ TableName: entity.tableName }));
-      return true;
-    } catch (err) {
-      if (typeof err === "object" && err !== null && "name" in err && err.name === "ResourceNotFoundException") {
-        return false;
-      }
-      throw err;
-    }
   }
 }
