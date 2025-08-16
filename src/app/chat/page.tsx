@@ -28,7 +28,9 @@ export default function ChatsPage() {
     <div className="flex h-screen">
       {/* LEFT: Chat List */}
       <aside className="border-divider w-full border-r bg-white md:w-1/3">
-        <h2 className="px-4 py-2 font-semibold">Messages ({chats.length})</h2>
+        <div className="text-primary border-divider border-b px-10 py-5.5 text-xl font-semibold">
+          <span>Messages ({chats.length})</span>
+        </div>
         <ul>
           {chats.map((chat) => (
             <li
@@ -75,8 +77,12 @@ export default function ChatsPage() {
             </div>
 
             {/* Input */}
-            <div className="flex gap-2 border-t px-4 py-2">
-              <input type="text" placeholder="Write a message ..." className="flex-1 rounded-lg border px-8 py-5" />
+            <div className="border-divider flex gap-2 border-t bg-white px-4 py-2">
+              <input
+                type="text"
+                placeholder="Write a message ..."
+                className="placeholder:text-primary-dimmed flex-1 rounded-lg px-8 py-5"
+              />
               <button className="text-divider rounded-lg bg-transparent px-4 py-2 text-4xl">➤</button>
             </div>
           </>
