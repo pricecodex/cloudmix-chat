@@ -4,6 +4,7 @@ import {
   DeleteItemCommand,
   DescribeTableCommand,
   QueryCommand,
+  ScanCommand,
 } from "@aws-sdk/client-dynamodb";
 import { Entity } from "./entity";
 import { GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
@@ -17,19 +18,24 @@ type EntitySchema<T> =
 
 export class Query {
   static async get<T extends Entity>(entity: T, value: string) {
-    await this.createIfNeeded(entity);
-    const command = new GetCommand({
-      TableName: entity.tableName,
-      Key: { [entity.primaryKey.name]: value },
-    });
-    const { Item } = await db.send(command);
-    if (!Item) {
+    try {
+      await this.createIfNeeded(entity);
+      const command = new GetCommand({
+        TableName: entity.tableName,
+        Key: { [entity.primaryKey.name]: value },
+      });
+      const { Item } = await db.send(command);
+      if (!Item) {
+        return null;
+      }
+      return Item as EntitySchema<T>;
+    } catch {
       return null;
     }
-    return Item as EntitySchema<T>;
   }
 
   static async create<T extends Entity>(entity: T, value: EntitySchema<T>) {
+    await this.createIfNeeded(entity);
     await db.send(
       new PutCommand({
         TableName: entity.tableName,
@@ -39,6 +45,7 @@ export class Query {
   }
 
   static async remove<T extends Entity>(entity: T, primaryKey: string) {
+    await this.createIfNeeded(entity);
     await db.send(
       new DeleteItemCommand({
         TableName: entity.tableName,
@@ -56,6 +63,7 @@ export class Query {
       after?: Record<string, AttributeValue>;
     },
   ) {
+    await this.createIfNeeded(entity);
     const { Items, LastEvaluatedKey } = await db.send(
       new QueryCommand({
         TableName: entity.tableName,
@@ -74,6 +82,7 @@ export class Query {
     primaryKey: string,
     value: Partial<EntitySchema<Entity>>,
   ) {
+    await this.createIfNeeded(entity);
     const setExpression = Object.keys(value)
       .map((column) => `${column} = :${column}`)
       .join(", ");
@@ -95,7 +104,7 @@ export class Query {
     }
 
     const command = new CreateTableCommand({
-      TableName: "Connections",
+      TableName: entity.tableName,
       AttributeDefinitions: [
         {
           AttributeName: entity.primaryKey.name,

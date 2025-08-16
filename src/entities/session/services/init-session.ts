@@ -3,24 +3,21 @@ import { InitSessionDto } from "../dtos/init-session.dto";
 import { Session } from "../session.entity";
 import { randomBytes } from "crypto";
 import { MAX_SHORT_VARCHAR } from "@/server/shared/db/constants";
+import { findSession } from "./find-sesssion";
 
 export async function initSession(dto: InitSessionDto) {
-  const { items } = await Query.find(Session, {
-    limit: 1,
-    where: "userKey = :username",
-    whereValues: { ":username": { S: dto.username } },
-  });
-  const [prevSession = null] = items;
+  const prevSession = await findSession(dto.username);
 
   if (prevSession) {
-    await Query.remove(Session, prevSession.token);
+    await Query.remove(Session, prevSession.username);
   }
-  const token = randomBytes(MAX_SHORT_VARCHAR).toString("hex");
+  const token = randomBytes(Math.ceil(MAX_SHORT_VARCHAR / 2)).toString("hex");
   const newSession = {
     token,
     status: "active",
-    userKey: dto.username,
+    username: dto.username,
   } as const;
+
   await Query.create(Session, newSession);
   return newSession;
 }

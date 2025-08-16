@@ -1,7 +1,7 @@
 import { Entity } from "@/server/shared/db/entity";
 import { ScalarAttributeType } from "@aws-sdk/client-dynamodb";
 
-export const User: Entity<{ username: string; password: string }> = {
+export const User: Entity<{ username: string; hash: string; salt: string }> = {
   primaryKey: { type: ScalarAttributeType.S, name: "username" },
   tableName: "Users",
 };
