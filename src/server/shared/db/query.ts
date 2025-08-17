@@ -43,6 +43,7 @@ export class Query {
       whereValues?: Record<string, AttributeValue>;
       limit?: number;
       after?: Record<string, AttributeValue>;
+      select?: string;
     },
   ) {
     const { Items, LastEvaluatedKey } = await db.send(
@@ -52,6 +53,7 @@ export class Query {
         ExpressionAttributeValues: options.whereValues,
         Limit: options.limit,
         ExclusiveStartKey: options.after,
+        ProjectionExpression: options.select,
       }),
     );
 
