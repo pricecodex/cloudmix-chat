@@ -1,17 +1,14 @@
 import { CreateTableCommand, DescribeTableCommand, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { BILLING_MODE, ENTITIES, PRIMARY_KEY, SORT_KEY } from "../constants";
 import { Entity } from "./entity";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
-export const db = DynamoDBDocumentClient.from(
-  new DynamoDBClient({
-    region: process.env.AWS_REGION!,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
-  }),
-);
+export const db = new DynamoDBClient({
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
 
 async function tableExists(entity: Entity) {
   try {

@@ -1,5 +1,6 @@
 import { AttributeValue, DeleteItemCommand, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { db } from "./db";
 import { Entity } from "./entity";
 
@@ -60,7 +61,7 @@ export class Query {
       }),
     );
 
-    return { items: Items as EntitySchema<T>[], lastKey: LastEvaluatedKey };
+    return { items: Items?.map((item) => unmarshall(item)) as EntitySchema<T>[], lastKey: LastEvaluatedKey };
   }
 
   static async update<T extends Entity>(
