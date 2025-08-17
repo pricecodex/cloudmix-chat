@@ -7,6 +7,7 @@ import { hashPassword } from "./hash-user-password";
 import { AI_DEFAULT_MESSAGE, AI_USERNAME } from "@/server/shared/ai/ai";
 import { Chat } from "@/entities/chat/chat.entity";
 import { getAiChatId } from "@/features/ai/utils";
+import { ChatMessage } from "@/entities/chat-message/chat-message.entity";
 
 export async function createUser(dto: CreateUserDto) {
   const previousUser = await Query.get(User, dto.username);
@@ -18,6 +19,7 @@ export async function createUser(dto: CreateUserDto) {
   const chatId = getAiChatId(dto.username);
   const now = new Date().toISOString();
   await Query.create(Chat, { chatId, lastMessageDate: now, lastMessage: AI_DEFAULT_MESSAGE });
+  await Query.create(ChatMessage, { content: AI_DEFAULT_MESSAGE, chatId, createdAt: now, owner: AI_USERNAME });
   await Query.create(User, {
     username: dto.username,
     salt,
