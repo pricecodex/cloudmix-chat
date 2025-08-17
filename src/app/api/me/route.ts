@@ -13,14 +13,18 @@ export const POST = requestHandler(async (req: NextRequest) => {
   await authorizeSession(dto);
   const currentUser = (await Query.get(User, dto.username))!;
   const chats = await Promise.all(
-    Object.entries(currentUser.chats).map(async ([toUser, chatId]) => ({
-      chat: (await Query.get(Chat, chatId))!,
-      isOnline: !!(await Query.get(Session, toUser))?.connectionId,
-      username: toUser,
-    })),
+    Object.entries(currentUser.chats).map(async ([toUser, chatId]) => {
+      const [chat, toUserSession] = await Promise.all([Query.get(Chat, chatId), Query.get(Session, toUser)]);
+      return {
+        lastMessageDate: chat!.lastMessageDate,
+        lastMessage: chat!.lastMessage,
+        username: toUser,
+        isOnline: !!toUserSession?.connectionId,
+      };
+    }),
   );
 
-  chats.sort((a, b) => new Date(b.chat.lastMessageDate).getTime() - new Date(a.chat.lastMessageDate).getTime());
+  chats.sort((a, b) => new Date(b.lastMessageDate).getTime() - new Date(a.lastMessageDate).getTime());
 
   return NextResponse.json({ data: chats });
 });
