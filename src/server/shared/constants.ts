@@ -11,5 +11,6 @@ export const WS_EXIRE_SECS = 60;
 
 export const MAX_SHORT_VARCHAR = 512;
 export const MAX_LONG_VARCHAR = 5000;
+export const ONE_TO_MANY_RELATIONSHIP_LIMIT = 20
 
 export const ENTITIES = [User, Session, Chat, ChatMessage];

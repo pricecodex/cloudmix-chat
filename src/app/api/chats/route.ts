@@ -5,6 +5,7 @@ import { authorizeSession } from "@/entities/session/services/authorize-session"
 import { Session } from "@/entities/session/session.entity";
 import { User } from "@/entities/user/user.entity";
 import { getEvenBuffer, WsNotification } from "@/features/aws/ws-notification";
+import { ONE_TO_MANY_RELATIONSHIP_LIMIT } from "@/server/shared/constants";
 import { generateRandomString } from "@/server/shared/db/generate-randon-string";
 import { Query } from "@/server/shared/db/query";
 import { BadRequestException } from "@/server/shared/exceptions/bad-request.exception";
@@ -23,6 +24,9 @@ export const POST = requestHandler(async (req: NextRequest) => {
   }
   if (toUser.username === session.username) {
     throw new BadRequestException("You can't create chat with yourself");
+  }
+  if (Object.values(fromUser.chats).length >= ONE_TO_MANY_RELATIONSHIP_LIMIT) {
+    throw new BadRequestException("You've reached the maximum chats limit");
   }
   const toUserSession = await Query.get(Session, dto.to);
   const now = new Date().toISOString();
