@@ -31,6 +31,7 @@ export async function handleWsMessage(dto: WsMessageDto) {
       from: dto.from,
       createdAt: now,
       chatId,
+      message: dto.content,
     }),
   );
 }

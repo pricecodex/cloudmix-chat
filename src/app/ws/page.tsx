@@ -1,7 +1,6 @@
 "use client";
 
 import { WS_ACTION, WsEndpoint } from "@/features/aws";
-import { aiGoogle } from "@/server/shared/ai/ai";
 import { useEffect } from "react";
 
 const Page = () => {
@@ -48,14 +47,8 @@ const Page = () => {
         method: "POST",
         body: JSON.stringify({ ...loginData, question }),
       });
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        console.log(decoder.decode(value, { stream: true }));
-      }
+      const { data } = await res.json();
+      console.log("data", data);
     };
   }, []);
 
