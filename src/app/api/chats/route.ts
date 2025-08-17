@@ -42,6 +42,7 @@ export const POST = requestHandler(async (req: NextRequest) => {
       from: session.username,
       createdAt: now,
       chatId,
+      message: dto.message,
     }),
   );
 
