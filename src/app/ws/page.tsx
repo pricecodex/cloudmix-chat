@@ -41,6 +41,11 @@ const Page = () => {
       const data = await res.json();
       console.log(data);
     };
+
+    window.askBot = async () => {
+      const res = await fetch("/api/chats/ai", { method: "POST", body: JSON.stringify({ ...loginData }) });
+      const data = await res.json();
+    };
   }, []);
 
   return null;

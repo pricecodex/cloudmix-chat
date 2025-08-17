@@ -16,6 +16,7 @@ export const POST = requestHandler(async (req: NextRequest) => {
     Object.entries(currentUser.chats).map(async ([toUser, chatId]) => {
       const [chat, toUserSession] = await Promise.all([Query.get(Chat, chatId), Query.get(Session, toUser)]);
       return {
+        chatId,
         lastMessageDate: chat!.lastMessageDate,
         lastMessage: chat!.lastMessage,
         username: toUser,

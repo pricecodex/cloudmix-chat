@@ -33,8 +33,8 @@ export const POST = requestHandler(async (req: NextRequest) => {
   const chatId = generateRandomString();
   await Query.create(Chat, { chatId, lastMessageDate: now, lastMessage: dto.message });
   await Query.create(ChatMessage, { chatId, createdAt: now, content: dto.message, owner: session.username });
-  await Query.update(User, session.username, { chats: { ...fromUser.chats, [dto.to]: chatId } });
-  await Query.update(User, dto.to, { chats: { ...toUser.chats, [session.username]: chatId } });
+  await Query.update(User, { primaryKey: session.username }, { chats: { ...fromUser.chats, [dto.to]: chatId } });
+  await Query.update(User, { primaryKey: dto.to }, { chats: { ...toUser.chats, [session.username]: chatId } });
 
   await sendToActive(
     toUserSession,

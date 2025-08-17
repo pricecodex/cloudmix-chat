@@ -5,6 +5,9 @@ import { Entity } from "./entity";
 
 export type EntitySchema<T> = T extends Entity<infer Schema> ? Schema : never;
 
+export type WhenSK<T, SKCase, DefaultCase> =
+  T extends Entity<infer Schema, infer PK, infer SK> ? (string extends SK ? DefaultCase : SKCase) : never;
+
 export class Query {
   static async get<T extends Entity>(entity: T, value: string) {
     const command = new GetCommand({
@@ -60,16 +63,24 @@ export class Query {
     return { items: Items as EntitySchema<T>[], lastKey: LastEvaluatedKey };
   }
 
-  static async update<T extends Entity>(entity: T, primaryKey: string, value: Partial<EntitySchema<T>>) {
+  static async update<T extends Entity>(
+    entity: T,
+    keys: WhenSK<T, { primaryKey: string; sortKey: string }, { primaryKey: string }>,
+    value: Partial<EntitySchema<T>>,
+  ) {
     const setExpression = Object.keys(value)
       .map((column) => `${column} = :${column}`)
       .join(", ");
     const setValues = Object.fromEntries(Object.entries(value).map(([key, value]) => [`:${key}`, value]));
+    const key = { [entity.primaryKey.name]: keys.primaryKey };
+    if ("sortKey" in keys && "sortKey" in entity) {
+      key[entity.sortKey!.name] = keys.sortKey as string;
+    }
 
     await db.send(
       new UpdateCommand({
         TableName: entity.tableName,
-        Key: { [entity.primaryKey.name]: primaryKey },
+        Key: key,
         UpdateExpression: `SET ${setExpression}`,
         ExpressionAttributeValues: setValues,
         ReturnValues: "NONE",
