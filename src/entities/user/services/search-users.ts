@@ -4,7 +4,7 @@ import { User } from "../user.entity";
 export async function searchUsers(prefix: string) {
   const users = await Query.find(User, {
     where: "begins_with(username, :prefix)",
-    whereValues: { prefix: { S: prefix } },
+    whereValues: { ":prefix": { S: prefix } },
     select: "username",
     limit: 5,
   });
