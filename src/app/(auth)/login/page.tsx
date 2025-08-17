@@ -1,11 +1,12 @@
 "use client";
 
+import { MAX_SHORT_VARCHAR } from "@/server/shared/constants";
 import { useState } from "react";
 import { z } from "zod";
 
 const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  username: z.string(),
+  password: z.string().nonempty().max(MAX_SHORT_VARCHAR),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -21,7 +22,7 @@ export default function LoginPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const result = loginSchema.safeParse(formData);
@@ -37,6 +38,14 @@ export default function LoginPage() {
 
     setErrors({});
     console.log("Login submitted:", formData);
+    const res = await fetch("/api/login", {
+      method: "POST",
+      body: JSON.stringify(formData),
+    });
+
+    const { data } = await res.json();
+    console.log("data", data);
+    localStorage.setItem("loginData", JSON.stringify(data));
     // TODO: Call backend API here
   };
 

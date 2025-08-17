@@ -1,11 +1,12 @@
 "use client";
 
+import { MAX_SHORT_VARCHAR } from "@/server/shared/constants";
 import { useState } from "react";
 import { z } from "zod";
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  username: z.string(),
+  password: z.string().nonempty().max(MAX_SHORT_VARCHAR),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -21,7 +22,7 @@ export default function RegisterPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const result = registerSchema.safeParse(formData);
@@ -36,8 +37,13 @@ export default function RegisterPage() {
     }
 
     setErrors({});
-    console.log("Register submitted:", formData);
-    // TODO: Call backend API here
+    const res = await fetch("/api/register", {
+      method: "POST",
+      body: JSON.stringify(formData),
+    });
+
+    const { data } = await res.json();
+    console.log("data", data);
   };
 
   return (

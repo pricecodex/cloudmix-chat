@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import clsx from "clsx";
+import MessageModal from "@/components/MessageModal";
 
 const chats = [
   { id: "1", name: "Aslan", lastMessage: "Hi, how is going now?", time: "10:44" },
@@ -21,24 +23,48 @@ const mockMessages: Record<string, { from: string; text: string }[]> = {
 };
 
 export default function ChatsPage() {
-  const [activeChat, setActiveChat] = useState<string | null>("1"); // default: first chat
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeChat, setActiveChat] = useState<string | null>(null);
   const messages = activeChat ? mockMessages[activeChat] : [];
+
+  useEffect(() => {
+    (async () => {
+      const loginData = JSON.parse(localStorage.getItem("loginData") || "");
+
+      const res = await fetch("/api/me", {
+        method: "POST",
+        body: JSON.stringify({ ...loginData }),
+      });
+      const { data } = await res.json();
+      console.log("data", data);
+      return data;
+    })();
+  }, []);
 
   return (
     <div className="flex h-screen">
+      <MessageModal isOpen={isOpen} setIsOpen={setIsOpen} />
+
       {/* LEFT: Chat List */}
-      <aside className="border-divider w-full border-r bg-white md:w-1/3">
-        <div className="text-primary border-divider border-b px-10 py-5.5 text-xl font-semibold">
+      <aside className={clsx("border-divider w-full border-r bg-white md:w-1/3", activeChat && "hidden md:block")}>
+        <div className="text-primary border-divider flex items-center justify-between border-b px-5 py-5.5 text-xl font-semibold">
           <span>Messages ({chats.length})</span>
+          <button
+            className="bg-secondary rounded-lg p-2 text-sm text-white hover:bg-purple-400"
+            onClick={() => setIsOpen(true)}
+          >
+            Find user
+          </button>
         </div>
         <ul>
           {chats.map((chat) => (
             <li
               key={chat.id}
               onClick={() => setActiveChat(chat.id)}
-              className={`border-divider cursor-pointer border-b px-6 py-4.5 hover:bg-gray-100 ${
-                activeChat === chat.id ? "bg-gray-200" : ""
-              }`}
+              className={clsx(
+                "border-divider cursor-pointer border-b px-6 py-4.5 hover:bg-gray-100",
+                activeChat === chat.id && "bg-gray-200",
+              )}
             >
               <p className="text-primary text-lg font-medium">{chat.name}</p>
               <div className="text-primary-dimmed flex justify-between">
@@ -50,8 +76,8 @@ export default function ChatsPage() {
         </ul>
       </aside>
 
-      {/* RIGHT: Chat Window (hidden on mobile until selected) */}
-      <section className="bg-chat-bg hidden flex-1 flex-col md:flex">
+      {/* RIGHT: Chat Window */}
+      <section className={clsx("bg-chat-bg flex flex-1 flex-col", activeChat ? "flex" : "hidden", "md:flex")}>
         {activeChat ? (
           <>
             {/* Chat header */}
@@ -60,16 +86,21 @@ export default function ChatsPage() {
                 <h2 className="text-primary text-lg font-medium">{chats.find((c) => c.id === activeChat)?.name}</h2>
                 <p className="text-primary-dimmed">Online</p>
               </div>
+              {/* Back button (mobile only) */}
+              <button onClick={() => setActiveChat(null)} className="text-sm text-purple-600 md:hidden">
+                ← Back
+              </button>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 space-y-6 overflow-y-auto px-6 py-3">
+            <div className="md: flex-1 space-y-6 overflow-y-auto p-6 md:pr-6 md:pl-10">
               {messages.map((msg, i) => (
                 <div
                   key={i}
-                  className={`max-w-xs rounded-2xl px-3 py-2 ${
-                    msg.from === "You" ? "bg-secondary ml-auto text-white" : "bg-white"
-                  }`}
+                  className={clsx(
+                    "max-w-xs rounded-2xl px-3 py-2",
+                    msg.from === "You" ? "bg-secondary ml-auto text-white" : "bg-white",
+                  )}
                 >
                   {msg.text}
                 </div>
@@ -87,7 +118,9 @@ export default function ChatsPage() {
             </div>
           </>
         ) : (
-          <div className="flex flex-1 items-center justify-center text-gray-400">Select a chat to start messaging</div>
+          <div className="hidden flex-1 items-center justify-center text-gray-400 md:flex">
+            Select a chat to start messaging
+          </div>
         )}
       </section>
     </div>
