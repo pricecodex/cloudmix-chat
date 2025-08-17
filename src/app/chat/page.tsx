@@ -1,43 +1,144 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import MessageModal from "@/components/MessageModal";
+import { WS_ACTION, WsEndpoint } from "@/features/aws";
 
-const chats = [
-  { id: "1", name: "Aslan", lastMessage: "Hi, how is going now?", time: "10:44" },
-  { id: "2", name: "Moana", lastMessage: "Yo bro I got some info for you", time: "10:21" },
-  { id: "3", name: "Dragon Love", lastMessage: "Send nuds", time: "10:44" },
-];
+type Chat = {
+  id: string;
+  username: string;
+  lastMessage: string;
+  lastMessageDate: string;
+  isOnline: boolean;
+  chatId: string;
+};
 
-const mockMessages: Record<string, { from: string; text: string }[]> = {
-  "1": [
-    { from: "Aslan", text: "Yo Samurai, me and pokemon head will going to Dostyk, will u join?" },
-    { from: "You", text: "Okay what exactly we're doing there?" },
-    { from: "You", text: "First of all, could we have a snack at Memo's" },
-    { from: "Aslan", text: "We'll have to look for a gift for Alina" },
-    { from: "Aslan", text: "Ok cool" },
-  ],
-  "2": [{ from: "Moana", text: "Yo bro I got some info for you" }],
-  "3": [{ from: "Dragon Love", text: "Send nuds" }],
+type Message = {
+  from: string;
+  text: string;
+  createdAt: string;
+  // message: string;
 };
 
 export default function ChatsPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeChat, setActiveChat] = useState<string | null>(null);
-  const messages = activeChat ? mockMessages[activeChat] : [];
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+
+  const sendMessage = () => {
+    if (!newMessage.trim()) return;
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
+    const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
+
+    wsRef.current.send(
+      JSON.stringify({
+        ...loginData,
+        action: WS_ACTION,
+        endpoint: WsEndpoint.Message,
+        content: newMessage,
+        to: chats.find((c) => c.id === activeChat)?.username,
+      }),
+    );
+
+    // Optimistic UI update
+    setMessages((prev) => [...prev, { from: "You", text: newMessage }]);
+    setNewMessage("");
+  };
+
+  const wsRef = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
+
+    const ws = new WebSocket(
+      `wss://${process.env.NEXT_PUBLIC_AWS_API_GATEWAY_ID}.execute-api.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_API_STAGE}`,
+    );
+
+    ws.onopen = () => {
+      console.log("Connected");
+      ws.send(JSON.stringify({ action: WS_ACTION, endpoint: WsEndpoint.Connect, ...loginData }));
+    };
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data).body;
+
+      console.log("Received:", msg);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: msg.owner === loginData.username ? "You" : msg.owner,
+          text: msg.message,
+          createdAt: msg.createdAt || new Date().toISOString(),
+        },
+      ]);
+      console.log("messages", messages);
+    };
+
+    ws.onclose = () => console.log("Disconnected");
+    ws.onerror = (err) => console.error("Error:", err);
+
+    wsRef.current = ws;
+
+    return () => ws.close();
+  }, []);
+
+  useEffect(() => {
+    if (!activeChat) return;
+
+    (async () => {
+      try {
+        const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
+
+        const res = await fetch(`/api/chats/${activeChat}`, {
+          method: "POST",
+          body: JSON.stringify(loginData),
+        });
+
+        const { data } = await res.json();
+
+        const normalized = data.map((m: any) => ({
+          from: m.owner === loginData.username ? "You" : m.owner,
+          text: m.content,
+          createdAt: m.createdAt,
+        }));
+
+        setMessages(normalized);
+      } catch (err) {
+        console.error("Failed to fetch messages", err);
+        setMessages([]);
+      }
+    })();
+  }, [activeChat]);
 
   useEffect(() => {
     (async () => {
-      const loginData = JSON.parse(localStorage.getItem("loginData") || "");
+      try {
+        const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
 
-      const res = await fetch("/api/me", {
-        method: "POST",
-        body: JSON.stringify({ ...loginData }),
-      });
-      const { data } = await res.json();
-      console.log("data", data);
-      return data;
+        const res = await fetch("/api/me", {
+          method: "POST",
+          body: JSON.stringify({ ...loginData }),
+        });
+
+        const json = await res.json();
+        console.log("Fetched chats:", json);
+
+        const chatsArray = Array.isArray(json.data) ? json.data : [];
+
+        const normalized = chatsArray.map((c, idx) => ({
+          ...c,
+          id: c.chatId,
+        }));
+
+        setChats(normalized);
+      } catch (e) {
+        console.error("Failed to fetch chats", e);
+      }
     })();
   }, []);
 
@@ -66,10 +167,15 @@ export default function ChatsPage() {
                 activeChat === chat.id && "bg-gray-200",
               )}
             >
-              <p className="text-primary text-lg font-medium">{chat.name}</p>
+              <p className="text-primary text-lg font-medium">{chat.username}</p>
               <div className="text-primary-dimmed flex justify-between">
                 <p className="truncate text-sm">{chat.lastMessage}</p>
-                <span className="text-xs">{chat.time}</span>
+                <span className="text-xs">
+                  {new Date(chat.lastMessageDate).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
               </div>
             </li>
           ))}
@@ -83,8 +189,10 @@ export default function ChatsPage() {
             {/* Chat header */}
             <div className="border-divider flex items-center justify-between border-b bg-white px-10 py-2.5">
               <div>
-                <h2 className="text-primary text-lg font-medium">{chats.find((c) => c.id === activeChat)?.name}</h2>
-                <p className="text-primary-dimmed">Online</p>
+                <h2 className="text-primary text-lg font-medium">{chats.find((c) => c.id === activeChat)?.username}</h2>
+                <p className="text-primary-dimmed">
+                  {chats.find((c) => c.id === activeChat)?.isOnline ? "Online" : "Offline"}
+                </p>
               </div>
               {/* Back button (mobile only) */}
               <button onClick={() => setActiveChat(null)} className="text-sm text-purple-600 md:hidden">
@@ -93,7 +201,7 @@ export default function ChatsPage() {
             </div>
 
             {/* Messages */}
-            <div className="md: flex-1 space-y-6 overflow-y-auto p-6 md:pr-6 md:pl-10">
+            <div className="flex-1 space-y-6 overflow-y-auto p-6 md:px-10">
               {messages.map((msg, i) => (
                 <div
                   key={i}
@@ -102,7 +210,7 @@ export default function ChatsPage() {
                     msg.from === "You" ? "bg-secondary ml-auto text-white" : "bg-white",
                   )}
                 >
-                  {msg.text}
+                  <p>{msg.text}</p>
                 </div>
               ))}
             </div>
@@ -111,10 +219,24 @@ export default function ChatsPage() {
             <div className="border-divider flex gap-2 border-t bg-white px-4 py-2">
               <input
                 type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
                 placeholder="Write a message ..."
                 className="placeholder:text-primary-dimmed flex-1 rounded-lg px-8 py-5"
               />
-              <button className="text-divider rounded-lg bg-transparent px-4 py-2 text-4xl">➤</button>
+              <button
+                type="button"
+                onClick={sendMessage}
+                className="text-divider hover:text-primary rounded-lg bg-transparent px-4 py-2 text-4xl"
+              >
+                ➤
+              </button>
             </div>
           </>
         ) : (
