@@ -7,7 +7,6 @@ export type EntitySchema<T> = T extends Entity<infer Schema> ? Schema : never;
 
 export class Query {
   static async get<T extends Entity>(entity: T, value: string) {
-    console.log(entity.tableName, value);
     const command = new GetCommand({
       TableName: entity.tableName,
       Key: { [entity.primaryKey.name]: value },

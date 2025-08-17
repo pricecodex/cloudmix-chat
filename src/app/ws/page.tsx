@@ -5,33 +5,21 @@ import { useEffect } from "react";
 
 const Page = () => {
   useEffect(() => {
+    const loginData = JSON.parse(localStorage.getItem("loginData") || "");
     const ws = new WebSocket(
       `wss://${process.env.NEXT_PUBLIC_AWS_API_GATEWAY_ID}.execute-api.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_API_STAGE}`,
     );
 
     ws.onopen = () => {
       console.log("Connected");
-      ws.send(
-        JSON.stringify({
-          action: WS_ACTION,
-          endpoint: WsEndpoint.Connect,
-          token:
-            "e8b4cf8cdc76e89a079f9ce43194bb5b56bfceff6a0f63cf2ac06d6f51e6a64d6eb62bfc900a08a9776b9311d3c5add1edae369e83525251066e15ad3ab7b431f49f99b33bc2045864ce15a4ad347eae30fd378c8e74e512713cd3799436f4910de1cdfa5a507d4a89f85ed868904f3b5ac6a7410df530d91f151fa1775b0577f6477705b134da73a84cbe59a1cd93040e98d3d4d0735edf7034f4cb059f76538a9bec9b2a83225fd020b9409bcc7d27552a1fb20215d2c64da469df7c7ce585bfee042cddf43072efdc2c0ebf3b51b17d0472c542f1d0b6c8aa2594f15e4ef6ee2f22cedb9b133f3267d0878518d1ff43be035971ecdbd215d8bd5004a8fe21",
-          username: "test",
-        }),
-      );
 
-      ws.send(
-        JSON.stringify({
-          action: WS_ACTION,
-          endpoint: WsEndpoint.Message,
-          content: "MESSAGE",
-          to: "test1",
-          token:
-            "e8b4cf8cdc76e89a079f9ce43194bb5b56bfceff6a0f63cf2ac06d6f51e6a64d6eb62bfc900a08a9776b9311d3c5add1edae369e83525251066e15ad3ab7b431f49f99b33bc2045864ce15a4ad347eae30fd378c8e74e512713cd3799436f4910de1cdfa5a507d4a89f85ed868904f3b5ac6a7410df530d91f151fa1775b0577f6477705b134da73a84cbe59a1cd93040e98d3d4d0735edf7034f4cb059f76538a9bec9b2a83225fd020b9409bcc7d27552a1fb20215d2c64da469df7c7ce585bfee042cddf43072efdc2c0ebf3b51b17d0472c542f1d0b6c8aa2594f15e4ef6ee2f22cedb9b133f3267d0878518d1ff43be035971ecdbd215d8bd5004a8fe21",
-          username: "test",
-        }),
-      );
+      ws.send(JSON.stringify({ action: WS_ACTION, endpoint: WsEndpoint.Connect, ...loginData }));
+
+      window.sendTo = (to: string, message: string) => {
+        ws.send(
+          JSON.stringify({ ...loginData, action: WS_ACTION, endpoint: WsEndpoint.Message, content: message, to }),
+        );
+      };
     };
 
     ws.onmessage = (event) => {
@@ -41,6 +29,18 @@ const Page = () => {
     ws.onclose = () => console.log("Disconnected");
 
     ws.onerror = (err) => console.error("Error:", err);
+
+    window.doSome = async () => {
+      const res = await fetch(
+        "/api/chats/6b11d7907f2b49e54f3c2682132c9a02aa1e7b08bdd0258bd7df47b758590d8f3a53015bf4eb8d315d2f9bf3689551734db964c947d6a8c6386f651b8eecd064a6c8a53f86274458723e37ab5ca4056f5401eab2aeb3bef14986bbda70f9cda03b2df5ae5bfcfa867c6ed215977dc03930bca925d502bfee822ee6ed7e74b7904226f4f83a0554433ca8a88fd8067de8369ded8874910d9766e6ba748722a81ffd6a2ab461ea81dff855c5e2c22e856e5e4d0d46988e56f8ab40f4fd4e50ee00f7517927905a3dd6fdb46dc20ff9e400f196d5289ea15a537b207a67d5e14652a46bb14c753f92eeea971f1f68998add306df7625316b993bbd2ddbb73221dfb",
+        {
+          method: "POST",
+          body: JSON.stringify(loginData),
+        },
+      );
+      const data = await res.json();
+      console.log(data);
+    };
   }, []);
 
   return null;
