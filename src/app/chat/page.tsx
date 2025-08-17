@@ -130,7 +130,7 @@ export default function ChatsPage() {
 
         const chatsArray = Array.isArray(json.data) ? json.data : [];
 
-        const normalized = chatsArray.map((c, idx) => ({
+        const normalized = chatsArray.map((c: any, idx: any) => ({
           ...c,
           id: c.chatId,
         }));
