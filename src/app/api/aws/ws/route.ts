@@ -25,10 +25,7 @@ export const POST = requestHandler(async (req: NextRequest) => {
       });
       return successResponse;
     case WsEndpoint.Message: {
-      const result = await validateSchema(
-        { ...body, from: username, connectionId: dto["aws.connectionId"] },
-        wsMessageDto,
-      );
+      const result = await validateSchema({ ...body, from: username }, wsMessageDto);
       await handleWsMessage(result);
       return successResponse;
     }

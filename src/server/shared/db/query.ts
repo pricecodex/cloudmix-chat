@@ -3,7 +3,7 @@ import { GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { db } from "./db";
 import { Entity } from "./entity";
 
-type EntitySchema<T> = T extends Entity<infer Schema> ? Schema : never;
+export type EntitySchema<T> = T extends Entity<infer Schema> ? Schema : never;
 
 export class Query {
   static async get<T extends Entity>(entity: T, value: string) {
