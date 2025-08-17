@@ -22,6 +22,6 @@ export async function createUser(dto: CreateUserDto) {
     username: dto.username,
     salt,
     hash: hashedPassword,
-    chats: {},
+    chats: { [AI_USERNAME]: chatId },
   });
 }
