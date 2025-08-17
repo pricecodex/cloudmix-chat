@@ -21,6 +21,9 @@ export const POST = requestHandler(async (req: NextRequest) => {
   if (!toUser) {
     throw new BadRequestException("No such user exists");
   }
+  if (toUser.username === session.username) {
+    throw new BadRequestException("You can't create chat with yourself");
+  }
   const toUserSession = await Query.get(Session, dto.to);
   const now = new Date().toISOString();
   const chatId = generateRandomString();
