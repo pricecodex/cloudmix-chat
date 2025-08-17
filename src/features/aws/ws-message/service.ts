@@ -27,7 +27,7 @@ export async function handleWsMessage(dto: WsMessageDto) {
     chatId = generateRandomString();
     // todo send chatid so user knows where to go
     // and also send new message to toUser
-    await Query.create(Chat, { chatId, lastMessage: now });
+    await Query.create(Chat, { chatId, lastMessageDate: now, lastMessage: dto.content });
     await Query.create(ChatMessage, { chatId, createdAt: now, content: dto.content, owner: dto.from });
     await Query.update(User, dto.from, { chats: { ...currentUser.chats, [dto.to]: chatId } });
     await Query.update(User, dto.to, { chats: { ...toUser.chats, [dto.from]: chatId } });

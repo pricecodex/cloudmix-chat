@@ -1,12 +1,13 @@
+import { authorizeSession } from "@/entities/session/services/authorize-session";
+import { searchUsersDto } from "@/entities/user/dtos/search-users.dto";
 import { searchUsers } from "@/entities/user/services/search-users";
 import { requestHandler } from "@/server/shared/request/handler";
+import { validateRequest } from "@/server/shared/request/validate";
 import { NextRequest, NextResponse } from "next/server";
 
-export const GET = requestHandler(async (req: NextRequest) => {
-  const prefix = req.nextUrl.searchParams.get("search");
-  if (!prefix) {
-    return NextResponse.json({ data: [] });
-  }
-  const users = await searchUsers(prefix);
+export const POST = requestHandler(async (req: NextRequest) => {
+  const dto = await validateRequest(req, searchUsersDto);
+  await authorizeSession(dto);
+  const users = await searchUsers(dto.search);
   return NextResponse.json({ data: users });
 });
