@@ -4,30 +4,21 @@ import { Query } from "@/server/shared/db/query";
 import { getAiChatId } from "./utils";
 
 export async function askAiQuestion(dto: { username: string; question: string }) {
-  return new ReadableStream({
-    async start(controller) {
-      const chatId = getAiChatId(dto.username);
-      const now = new Date().toISOString();
+  const userNow = new Date().toISOString();
+  const chatId = getAiChatId(dto.username);
 
-      await Query.create(ChatMessage, { chatId, content: "", owner: AI_USERNAME, createdAt: now });
-      try {
-        const stream = await ai.chat.completions.create({
-          model: "gpt-3.5-turbo",
-          messages: [{ role: "user", content: dto.question }],
-          stream: true,
-        });
-        let currentMessage = "";
-        for await (const chunk of stream) {
-          const message = chunk.choices[0]?.delta?.content || "";
-          currentMessage += message;
-          await Query.update(ChatMessage, { primaryKey: chatId, sortKey: now }, { content: currentMessage });
-          controller.enqueue(message);
-        }
-        controller.close();
-      } catch (error) {
-        console.log(error);
-        controller.error(error);
-      }
-    },
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash-lite",
+    contents: `
+    <context>You are a fast LLM answer this question in few words as possible, don't offer any follow up's</context>
+    <question>${dto.question}</question>
+    `,
   });
+  const botNow = new Date().toISOString();
+  const content = response.text!;
+
+  await Query.create(ChatMessage, { chatId, content, owner: dto.username, createdAt: userNow });
+  await Query.create(ChatMessage, { chatId, content, owner: AI_USERNAME, createdAt: botNow });
+
+  return content;
 }

@@ -8,5 +8,6 @@ import z from "zod";
 export const POST = requestHandler(async (req: NextRequest) => {
   const dto = await validateRequest(req, findSessionDto.extend({ question: z.string() }));
 
-  return new NextResponse(await askAiQuestion(dto));
+  const answer = await askAiQuestion(dto);
+  return NextResponse.json({ data: { answer } });
 });

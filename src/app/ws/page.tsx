@@ -1,6 +1,7 @@
 "use client";
 
 import { WS_ACTION, WsEndpoint } from "@/features/aws";
+import { aiGoogle } from "@/server/shared/ai/ai";
 import { useEffect } from "react";
 
 const Page = () => {
@@ -42,9 +43,19 @@ const Page = () => {
       console.log(data);
     };
 
-    window.askBot = async () => {
-      const res = await fetch("/api/chats/ai", { method: "POST", body: JSON.stringify({ ...loginData }) });
-      const data = await res.json();
+    window.askBot = async (question: string) => {
+      const res = await fetch("/api/chats/ai", {
+        method: "POST",
+        body: JSON.stringify({ ...loginData, question }),
+      });
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        console.log(decoder.decode(value, { stream: true }));
+      }
     };
   }, []);
 
