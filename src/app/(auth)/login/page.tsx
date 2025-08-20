@@ -1,17 +1,19 @@
 "use client";
 
 import { MAX_SHORT_VARCHAR } from "@/server/shared/constants";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { z } from "zod";
 
 const loginSchema = z.object({
-  username: z.string(),
+  username: z.string().nonempty(),
   password: z.string().nonempty().max(MAX_SHORT_VARCHAR),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState<LoginFormData>({
     username: "",
     password: "",
@@ -37,16 +39,23 @@ export default function LoginPage() {
     }
 
     setErrors({});
-    console.log("Login submitted:", formData);
+
     const res = await fetch("/api/login", {
       method: "POST",
       body: JSON.stringify(formData),
     });
 
-    const { data } = await res.json();
-    console.log("data", data);
-    localStorage.setItem("loginData", JSON.stringify(data));
-    // TODO: Call backend API here
+    if (res.ok) {
+      const { data } = await res.json();
+      console.log("Login success:", data);
+
+      localStorage.setItem("loginData", JSON.stringify(data));
+
+      router.push("/chat");
+    } else {
+      const { error } = await res.json();
+      setErrors({ password: error || "Invalid login" });
+    }
   };
 
   return (

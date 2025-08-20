@@ -1,8 +1,9 @@
 "use client";
 
-import { MAX_SHORT_VARCHAR } from "@/server/shared/constants";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { z } from "zod";
+import { MAX_SHORT_VARCHAR } from "@/server/shared/constants";
 
 const registerSchema = z.object({
   username: z.string(),
@@ -12,6 +13,8 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const [formData, setFormData] = useState<RegisterFormData>({
     username: "",
     password: "",
@@ -42,8 +45,12 @@ export default function RegisterPage() {
       body: JSON.stringify(formData),
     });
 
-    const { data } = await res.json();
-    console.log("data", data);
+    if (res.ok) {
+      router.push("/login");
+    } else {
+      const { error } = await res.json();
+      console.error("Registration failed:", error);
+    }
   };
 
   return (
