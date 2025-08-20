@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { WS_ACTION, WsEndpoint } from "@/features/aws";
 import { Chat, Message } from "@/types/chat";
 
@@ -10,6 +11,7 @@ import ChatWindow from "@/components/ChatWindow";
 import Header from "@/components/Header";
 
 export default function ChatsPage() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [chats, setChats] = useState<Chat[]>([]);
@@ -141,9 +143,29 @@ export default function ChatsPage() {
     })();
   }, []);
 
+  async function handleLogout() {
+    const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
+    try {
+      const res = await fetch("/api/logout", {
+        method: "POST",
+        body: JSON.stringify({ ...loginData }),
+      });
+
+      if (!res.ok) throw new Error("Failed to log out");
+      const json = await res.json();
+      console.log("logged out", json);
+
+      localStorage.removeItem("loginData");
+
+      router.push("/login");
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  }
+
   return (
     <div className="flex h-screen flex-col">
-      <Header />
+      <Header handleLogout={handleLogout} />
       <MessageModal isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <div className="flex flex-1">

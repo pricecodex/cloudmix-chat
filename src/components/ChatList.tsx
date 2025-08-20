@@ -14,7 +14,7 @@ type ChatListProps = {
 export default function ChatList({ chats, activeChat, setActiveChat, openModal }: ChatListProps) {
   return (
     <aside className={clsx("border-divider w-full border-r bg-white md:w-1/3", activeChat && "hidden md:block")}>
-      <div className="text-primary border-divider flex items-center justify-between border-b px-5 py-5.5 text-xl font-semibold">
+      <div className="text-primary border-divider flex items-center justify-between border-b px-5 py-4.5 text-xl font-semibold">
         <span>Messages ({chats.length})</span>
         <button className="bg-secondary rounded-lg p-2 text-sm text-white hover:bg-purple-400" onClick={openModal}>
           Find user
