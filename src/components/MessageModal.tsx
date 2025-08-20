@@ -13,7 +13,7 @@ export default function MessageModal({ isOpen, setIsOpen }: MessageModalProps) {
   const [message, setMessage] = useState("");
 
   const handleSend = async () => {
-    // if (!username || !message) return
+    if (!username || !message) return;
     console.log("Send:", { username, message });
     setIsOpen(false);
     setUsername("");
