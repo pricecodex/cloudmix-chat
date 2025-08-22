@@ -1,62 +1,33 @@
 "use client";
 
-import { MAX_SHORT_VARCHAR } from "@/server/shared/constants";
+import { AuthorizeSessionDto } from "@/entities/session/dtos/authorize-session.dto";
+import { findUserDto } from "@/entities/user/dtos/find-user.dto";
+import useMutation from "@/hooks/use-mutation";
+import useSession from "@/hooks/use-session";
+import { ApiRoute, ClientRoute } from "@/types/route";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { z } from "zod";
-
-const loginSchema = z.object({
-  username: z.string().nonempty(),
-  password: z.string().nonempty().max(MAX_SHORT_VARCHAR),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState<LoginFormData>({
-    username: "",
-    password: "",
+  const { set: setSession } = useSession();
+
+  const { mutate, formData, setFormData, errors } = useMutation<AuthorizeSessionDto, typeof findUserDto>({
+    schema: findUserDto,
+    path: ApiRoute.Login,
+    formData: { username: "", password: "" },
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = prevent(async () => {
+    const { isValid, result } = await mutate();
 
-    const result = loginSchema.safeParse(formData);
-    if (!result.success) {
-      const formErrors: Partial<Record<keyof LoginFormData, string>> = {};
-      result.error.issues.forEach((err) => {
-        const fieldName = err.path[0] as keyof LoginFormData;
-        formErrors[fieldName] = err.message;
-      });
-      setErrors(formErrors);
-      return;
+    if (isValid && result) {
+      setSession(result);
+      router.push(ClientRoute.ChatList);
     }
-
-    setErrors({});
-
-    const res = await fetch("/api/login", {
-      method: "POST",
-      body: JSON.stringify(formData),
-    });
-
-    if (res.ok) {
-      const { data } = await res.json();
-      console.log("Login success:", data);
-
-      localStorage.setItem("loginData", JSON.stringify(data));
-
-      router.push("/chat");
-    } else {
-      const { error } = await res.json();
-      setErrors({ password: error || "Invalid login" });
-    }
-  };
+  });
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">

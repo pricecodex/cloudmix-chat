@@ -1,57 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { AuthorizeSessionDto } from "@/entities/session/dtos/authorize-session.dto";
+import { findUserDto } from "@/entities/user/dtos/find-user.dto";
+import useMutation from "@/hooks/use-mutation";
+import { ApiRoute, ClientRoute } from "@/types/route";
 import { useRouter } from "next/navigation";
-import { z } from "zod";
-import { MAX_SHORT_VARCHAR } from "@/server/shared/constants";
-
-const registerSchema = z.object({
-  username: z.string(),
-  password: z.string().nonempty().max(MAX_SHORT_VARCHAR),
-});
-
-type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
 
-  const [formData, setFormData] = useState<RegisterFormData>({
-    username: "",
-    password: "",
+  const { mutate, formData, setFormData, errors } = useMutation<AuthorizeSessionDto, typeof findUserDto>({
+    schema: findUserDto,
+    path: ApiRoute.Register,
+    formData: { username: "", password: "" },
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof RegisterFormData, string>>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = prevent(async () => {
+    const { isValid } = await mutate();
 
-    const result = registerSchema.safeParse(formData);
-    if (!result.success) {
-      const formErrors: Partial<Record<keyof RegisterFormData, string>> = {};
-      result.error.issues.forEach((err) => {
-        const fieldName = err.path[0] as keyof RegisterFormData;
-        formErrors[fieldName] = err.message;
-      });
-      setErrors(formErrors);
-      return;
+    if (isValid) {
+      router.push(ClientRoute.Login);
     }
-
-    setErrors({});
-    const res = await fetch("/api/register", {
-      method: "POST",
-      body: JSON.stringify(formData),
-    });
-
-    if (res.ok) {
-      router.push("/login");
-    } else {
-      const { error } = await res.json();
-      console.error("Registration failed:", error);
-    }
-  };
+  });
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
