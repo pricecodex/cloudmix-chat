@@ -6,6 +6,7 @@ import { BadRequestException } from "@/server/shared/exceptions/bad-request.exce
 import { sendToActive } from "@/server/shared/ws/send-to-active";
 import { getEvenBuffer, WsNotification } from "../ws-notification";
 import { WsMessageDto } from "./dto";
+import { Chat } from "@/entities/chat/chat.entity";
 
 export async function handleWsMessage(dto: WsMessageDto) {
   const toUser = await Query.get(User, dto.to);
@@ -24,6 +25,7 @@ export async function handleWsMessage(dto: WsMessageDto) {
   }
 
   await Query.create(ChatMessage, { chatId: chatId, createdAt: now, content: dto.content, owner: dto.from });
+  await Query.update(Chat, { primaryKey: chatId }, { lastMessage: dto.content });
 
   await sendToActive(
     toUserSession,
