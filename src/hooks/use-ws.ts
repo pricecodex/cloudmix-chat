@@ -29,6 +29,7 @@ function useWs() {
   }
 
   function addMessageHandler<T extends WsNotification>(notification: T, handler: WsNotificationHandler<T>) {
+    window.wsHandlers = window.wsHandlers ?? {};
     window.wsHandlers?.[notification]?.push(handler as WsNotificationHandler<WsNotification>);
     return function () {
       if (!window.wsHandlers?.[notification]) {
@@ -50,9 +51,9 @@ function useWs() {
     window.ws.onmessage = (event) => {
       const message = JSON.parse(event.data) as WsClientNotification;
 
-      const typeHandlers = window.wsHandlers?.[message.type] ?? [];
+      const typeHandlers = window.wsHandlers?.[message.event] ?? [];
 
-      typeHandlers.forEach((handler) => handler(message.payload));
+      typeHandlers.forEach((handler) => handler(message.body));
     };
 
     return () => {};

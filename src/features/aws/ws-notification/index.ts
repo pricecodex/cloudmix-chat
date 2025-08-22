@@ -10,8 +10,8 @@ export type WsNotificationPayload = {
 
 export type WsClientNotification = {
   [K in keyof WsNotificationPayload]: {
-    type: K;
-    payload: WsNotificationPayload[K];
+    event: K;
+    body: WsNotificationPayload[K];
   };
 }[keyof WsNotificationPayload];
 
