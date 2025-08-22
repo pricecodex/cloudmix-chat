@@ -4,7 +4,7 @@ import { BadRequestException } from "@/server/shared/exceptions/bad-request.exce
 import { CreateUserDto } from "../dtos/create-user.dto";
 import { User } from "../user.entity";
 import { hashPassword } from "./hash-user-password";
-import { AI_DEFAULT_MESSAGE, AI_USERNAME } from "@/server/shared/ai/ai";
+import { AI_DEFAULT_MESSAGE, AI_USERNAME } from "@/server/shared/ai/constants";
 import { Chat } from "@/entities/chat/chat.entity";
 import { getAiChatId } from "@/features/ai/utils";
 import { ChatMessage } from "@/entities/chat-message/chat-message.entity";

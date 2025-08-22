@@ -19,7 +19,7 @@ import { useMemo } from "react";
 
 import { WsNotification } from "@/features/aws/ws-notification";
 import useWs from "@/hooks/use-ws";
-import { AI_USERNAME } from "@/server/shared/ai/ai";
+import { AI_USERNAME } from "@/server/shared/ai/constants";
 import { toast } from "sonner";
 import { truncate } from "@/utils/text";
 import { TOAST_MESSAGE_LIMIT } from "@/server/shared/constants";

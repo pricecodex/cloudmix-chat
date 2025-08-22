@@ -1,5 +1,3 @@
-"use client";
-
 import clsx from "clsx";
 import { Chat, Message } from "@/types/chat";
 
@@ -57,7 +55,7 @@ export default function ChatWindow({
             key={i}
             className={clsx(
               "max-w-xs rounded-2xl px-3 py-2",
-              msg.from === "You" ? "bg-secondary ml-auto text-white" : "bg-white",
+              msg.isMine ? "bg-secondary ml-auto text-white" : "bg-white",
             )}
           >
             <p>{msg.text}</p>
