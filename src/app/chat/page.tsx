@@ -32,8 +32,7 @@ export default function ChatsPage() {
   const [messages, setMessages] = useState<Message[]>([]);
 
   const { addMessageHandler, send } = useWs();
-  const { getOrFail } = useSession();
-  // const {}=useMutation()
+  const { getOrFail, getUsername } = useSession();
 
   const currentChat = useMemo(() => chats.find((chat) => chat.id === activeChatId), [activeChatId]);
 
@@ -171,7 +170,7 @@ export default function ChatsPage() {
 
   return (
     <div className="flex h-screen flex-col">
-      <Header handleLogout={handleLogout} />
+      <Header username={getUsername()} handleLogout={handleLogout} />
       <MessageModal isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <div className="flex flex-1">

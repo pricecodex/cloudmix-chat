@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 interface HeaderProps {
-  username?: string;
+  username: string;
   handleLogout: () => void;
 }
 
@@ -12,7 +12,7 @@ function Header({ username, handleLogout }: HeaderProps) {
         <Image src="/assets/logos/cloudmix.svg" alt="Cloudmix Logo" width={146} height={42} />
       </div>
       <div className="flex flex-col">
-        <h3 className="text-lg font-medium">{username || "Samurai Meow"}</h3>
+        <h3 className="text-lg font-medium">{username}</h3>
         <button className="inline-flex self-end text-base font-normal hover:underline" onClick={handleLogout}>
           Logout
         </button>
