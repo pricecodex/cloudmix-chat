@@ -1,6 +1,7 @@
-import { ApiRoute } from "@/types/route";
 import { useState } from "react";
 import z, { ZodObject } from "zod";
+import { toast } from "sonner";
+import { ApiRoute } from "@/types/route";
 import useSession from "./use-session";
 
 type Props<T extends ZodObject> = {
@@ -41,8 +42,7 @@ function useMutation<R extends object, T extends ZodObject>(props: Props<T>) {
       return { isValid: true, result: data as R };
     } else {
       const { error } = await res.json();
-      // TODO uncomment when ready
-      // showError(error)
+      toast.error(error);
       return { isValid: true, result: null };
     }
   }

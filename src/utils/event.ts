@@ -4,3 +4,5 @@ function prevent<T extends (...args: any[]) => any>(exec: T) {
     exec();
   };
 }
+
+export default prevent;

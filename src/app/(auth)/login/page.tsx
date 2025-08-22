@@ -1,11 +1,12 @@
 "use client";
 
-import { AuthorizeSessionDto } from "@/entities/session/dtos/authorize-session.dto";
-import { findUserDto } from "@/entities/user/dtos/find-user.dto";
+import { useRouter } from "next/navigation";
 import useMutation from "@/hooks/use-mutation";
 import useSession from "@/hooks/use-session";
+import { AuthorizeSessionDto } from "@/entities/session/dtos/authorize-session.dto";
+import { findUserDto } from "@/entities/user/dtos/find-user.dto";
 import { ApiRoute, ClientRoute } from "@/types/route";
-import { useRouter } from "next/navigation";
+import prevent from "@/utils/event";
 
 export default function LoginPage() {
   const router = useRouter();

@@ -1,10 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import useMutation from "@/hooks/use-mutation";
 import { AuthorizeSessionDto } from "@/entities/session/dtos/authorize-session.dto";
 import { findUserDto } from "@/entities/user/dtos/find-user.dto";
-import useMutation from "@/hooks/use-mutation";
 import { ApiRoute, ClientRoute } from "@/types/route";
-import { useRouter } from "next/navigation";
+import prevent from "@/utils/event";
 
 export default function RegisterPage() {
   const router = useRouter();
