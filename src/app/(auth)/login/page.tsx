@@ -12,7 +12,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { set: setSession } = useSession();
 
-  const { mutate, formData, setFormData, errors } = useMutation<AuthorizeSessionDto, typeof findUserDto>({
+  const { mutate, formData, setFormData, errors } = useMutation<typeof findUserDto, AuthorizeSessionDto>({
     schema: findUserDto,
     path: ApiRoute.Login,
     formData: { username: "", password: "" },

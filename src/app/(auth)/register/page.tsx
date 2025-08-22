@@ -10,7 +10,7 @@ import prevent from "@/utils/event";
 export default function RegisterPage() {
   const router = useRouter();
 
-  const { mutate, formData, setFormData, errors } = useMutation<AuthorizeSessionDto, typeof findUserDto>({
+  const { mutate, formData, setFormData, errors } = useMutation<typeof findUserDto, AuthorizeSessionDto>({
     schema: findUserDto,
     path: ApiRoute.Register,
     formData: { username: "", password: "" },

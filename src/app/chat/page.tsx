@@ -10,6 +10,13 @@ import ChatList from "@/components/ChatList";
 import ChatWindow from "@/components/ChatWindow";
 import Header from "@/components/Header";
 
+import useSession from "@/hooks/use-session";
+import { ApiRoute } from "@/types/route";
+import { AuthorizeSessionDto } from "@/entities/session/dtos/authorize-session.dto";
+import { findUserDto } from "@/entities/user/dtos/find-user.dto";
+import useMutation from "@/hooks/use-mutation";
+import { aiQuestionDto, questionDto, QuestionDto } from "@/features/ai";
+
 export default function ChatsPage() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -20,12 +27,21 @@ export default function ChatsPage() {
 
   const wsRef = useRef<WebSocket | null>(null);
 
+  const { getOrFail } = useSession();
+
+  const { mutate, formData, setFormData, errors } = useMutation<typeof questionDto, { answer: string }>({
+    schema: questionDto,
+    path: ApiRoute.AI,
+    formData: { question: "" },
+  });
+
   const sendMessage = () => {
     if (!newMessage.trim()) return;
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
     if (!activeChat) return;
 
     const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
+
     if (activeChat.startsWith("@ai-chat")) {
       async function askAI() {
         const res = await fetch("/api/chats/ai", {

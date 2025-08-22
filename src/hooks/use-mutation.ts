@@ -12,8 +12,7 @@ type Props<T extends ZodObject> = {
 
 type SchemaErrors<T extends ZodObject> = Partial<Record<keyof z.infer<T>, string>>;
 
-function useMutation<R extends object, T extends ZodObject>(props: Props<T>) {
-  // const { showError } = useToast()
+function useMutation<T extends ZodObject, R extends object = object>(props: Props<T>) {
   const { get } = useSession();
   const [formData, setFormData] = useState<z.infer<T>>(props.formData);
   const [errors, setErrors] = useState<SchemaErrors<T>>({});
