@@ -1,6 +1,6 @@
 "use client";
 
-import { WS_ACTION, WsEndpoint } from "@/features/aws";
+import { WsEndpoint } from "@/features/aws";
 import { Chat, Message } from "@/types/chat";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -10,7 +10,7 @@ import ChatWindow from "@/components/ChatWindow";
 import Header from "@/components/Header";
 import MessageModal from "@/components/MessageModal";
 
-import { questionDto } from "@/features/ai";
+import { questionDto } from "@/features/ai/dto";
 import useMutation from "@/hooks/use-mutation";
 import useSession from "@/hooks/use-session";
 import { ApiRoute } from "@/types/route";
@@ -20,10 +20,9 @@ import { useMemo } from "react";
 import { WsNotification } from "@/features/aws/ws-notification";
 import useWs from "@/hooks/use-ws";
 import { AI_USERNAME } from "@/server/shared/ai/constants";
-import { toast } from "sonner";
-import { truncate } from "@/utils/text";
 import { TOAST_MESSAGE_LIMIT } from "@/server/shared/constants";
-import z from "zod";
+import { truncate } from "@/utils/text";
+import { toast } from "sonner";
 
 export default function ChatsPage() {
   const router = useRouter();

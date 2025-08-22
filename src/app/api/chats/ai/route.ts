@@ -1,4 +1,5 @@
-import { aiQuestionDto, askAiQuestion } from "@/features/ai";
+import { askAiQuestion } from "@/features/ai";
+import { aiQuestionDto } from "@/features/ai/dto";
 import { requestHandler } from "@/server/shared/request/handler";
 import { validateRequest } from "@/server/shared/request/validate";
 import { NextRequest, NextResponse } from "next/server";
