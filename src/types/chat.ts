@@ -6,4 +6,4 @@ export type Chat = {
   isOnline: boolean;
 };
 
-export type Message = { from: string; text: string; createdAt?: string };
+export type Message = { isMine: boolean; text: string; createdAt?: string };

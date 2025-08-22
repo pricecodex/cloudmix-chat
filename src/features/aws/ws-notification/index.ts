@@ -4,10 +4,17 @@ export enum WsNotification {
   Message = "message",
 }
 
-type WS_NOTIFICATIONS = {
+export type WsNotificationPayload = {
   [WsNotification.Message]: WsMessageNotificationDto;
 };
 
-export function getEvenBuffer<T extends WsNotification>(event: T, body: WS_NOTIFICATIONS[T]) {
+export type WsClientNotification = {
+  [K in keyof WsNotificationPayload]: {
+    type: K;
+    payload: WsNotificationPayload[K];
+  };
+}[keyof WsNotificationPayload];
+
+export function getEvenBuffer<T extends WsNotification>(event: T, body: WsNotificationPayload[T]) {
   return Buffer.from(JSON.stringify({ event, body }));
 }

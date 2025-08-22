@@ -25,10 +25,17 @@ function useSession() {
     return session;
   }
 
+  function getUsername() {
+    const { username } = getOrFail();
+
+    return username;
+  }
+
   return {
     getOrFail,
     get,
     set,
+    getUsername,
   };
 }
 

@@ -1,13 +1,12 @@
 import { useState } from "react";
 import z, { ZodObject } from "zod";
 import { toast } from "sonner";
-import { ApiRoute } from "@/types/route";
 import useSession from "./use-session";
 
 type Props<T extends ZodObject> = {
   schema: T;
   formData: z.infer<T>;
-  path: ApiRoute;
+  path: string;
 };
 
 type SchemaErrors<T extends ZodObject> = Partial<Record<keyof z.infer<T>, string>>;
@@ -28,11 +27,11 @@ function useMutation<T extends ZodObject, R extends object = object>(props: Prop
       setErrors(formErrors);
       return { isValid: false, result: null };
     }
-    const activeSession = get() ?? {};
+    const sessionData = get() ?? {};
 
     const res = await fetch(props.path, {
       method: "POST",
-      body: JSON.stringify({ ...formData, ...activeSession }),
+      body: JSON.stringify({ ...formData, ...sessionData }),
     });
 
     if (res.ok) {

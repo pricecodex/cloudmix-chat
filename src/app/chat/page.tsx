@@ -1,117 +1,108 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { WS_ACTION, WsEndpoint } from "@/features/aws";
 import { Chat, Message } from "@/types/chat";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import MessageModal from "@/components/MessageModal";
 import ChatList from "@/components/ChatList";
 import ChatWindow from "@/components/ChatWindow";
 import Header from "@/components/Header";
+import MessageModal from "@/components/MessageModal";
 
+import { questionDto } from "@/features/ai";
+import useMutation from "@/hooks/use-mutation";
 import useSession from "@/hooks/use-session";
 import { ApiRoute } from "@/types/route";
-import { AuthorizeSessionDto } from "@/entities/session/dtos/authorize-session.dto";
-import { findUserDto } from "@/entities/user/dtos/find-user.dto";
-import useMutation from "@/hooks/use-mutation";
-import { aiQuestionDto, questionDto, QuestionDto } from "@/features/ai";
+
+import { useMemo } from "react";
+
+import { WsNotification } from "@/features/aws/ws-notification";
+import useWs from "@/hooks/use-ws";
+import { AI_USERNAME } from "@/server/shared/ai/ai";
+import { toast } from "sonner";
+import { truncate } from "@/utils/text";
+import { TOAST_MESSAGE_LIMIT } from "@/server/shared/constants";
+import z from "zod";
 
 export default function ChatsPage() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [chats, setChats] = useState<Chat[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
 
-  const wsRef = useRef<WebSocket | null>(null);
-
+  const { addMessageHandler, send } = useWs();
   const { getOrFail } = useSession();
+  // const {}=useMutation()
 
-  const { mutate, formData, setFormData, errors } = useMutation<typeof questionDto, { answer: string }>({
+  const currentChat = useMemo(() => chats.find((chat) => chat.id === activeChatId), [activeChatId]);
+
+  useEffect(() => {
+    const removeHandler = addMessageHandler(WsNotification.Message, (body) => {
+      const newChats = chats.map((chat) =>
+        chat.username === body.from ? { ...chat, lastMessage: body.message } : chat,
+      );
+      setChats(newChats);
+
+      if (currentChat && currentChat.username === body.from) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            isMine: false,
+            text: body.message,
+            createdAt: body.createdAt,
+          },
+        ]);
+      } else {
+        toast.message(
+          <div className="flex max-w-52 flex-col gap-1">
+            <p className="text-2xl font-bold">{body.from}</p>
+            <p>{truncate(body.message, TOAST_MESSAGE_LIMIT)}</p>
+          </div>,
+        );
+      }
+    });
+
+    return () => removeHandler();
+  }, []);
+
+  const {
+    mutate: sendAiMessage,
+    formData,
+    setFormData,
+  } = useMutation<typeof questionDto, { answer: string }>({
     schema: questionDto,
     path: ApiRoute.AI,
     formData: { question: "" },
   });
 
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    if (!activeChat) return;
+  const sendUserMessage = (message: string, to: string) =>
+    send(WsEndpoint.Message, { content: message, to, ...getOrFail() });
 
-    const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
-
-    if (activeChat.startsWith("@ai-chat")) {
-      async function askAI() {
-        const res = await fetch("/api/chats/ai", {
-          method: "POST",
-          body: JSON.stringify({ ...loginData, question: newMessage }),
-        });
-        const { data } = await res.json();
-        console.log("data", data);
-      }
-
-      askAI();
-    } else {
-      wsRef.current.send(
-        JSON.stringify({
-          ...loginData,
-          action: WS_ACTION,
-          endpoint: WsEndpoint.Message,
-          content: newMessage,
-          to: chats.find((c) => c.id === activeChat)?.username,
-        }),
-      );
+  const handleSendMessage = () => {
+    const message = formData.question.trim();
+    if (!currentChat || !message) {
+      return;
     }
-    // Optimistic UI update
-    setMessages((prev) => [...prev, { from: "You", text: newMessage }]);
-    setNewMessage("");
+
+    if (currentChat.username === AI_USERNAME) {
+      sendAiMessage();
+    } else {
+      sendUserMessage(message, currentChat.username);
+    }
+
+    setMessages((prev) => [...prev, { isMine: true, createdAt: new Date().toISOString(), text: message }]);
+    setFormData({ question: "" });
   };
 
   useEffect(() => {
-    const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
-
-    const ws = new WebSocket(
-      `wss://${process.env.NEXT_PUBLIC_AWS_API_GATEWAY_ID}.execute-api.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_API_STAGE}`,
-    );
-
-    ws.onopen = () => {
-      console.log("Connected");
-      ws.send(JSON.stringify({ action: WS_ACTION, endpoint: WsEndpoint.Connect, ...loginData }));
-    };
-
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data).body;
-
-      console.log("Received:", msg);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          from: msg.owner === loginData.username ? "You" : msg.owner,
-          text: msg.message,
-          createdAt: msg.createdAt || new Date().toISOString(),
-        },
-      ]);
-      console.log("messages", messages);
-    };
-
-    ws.onclose = () => console.log("Disconnected");
-    ws.onerror = (err) => console.error("Error:", err);
-
-    wsRef.current = ws;
-
-    return () => ws.close();
-  }, []);
-
-  useEffect(() => {
-    if (!activeChat) return;
+    if (!activeChatId) return;
     (async () => {
       try {
         const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
 
-        const res = await fetch(`/api/chats/${activeChat}`, {
+        const res = await fetch(`/api/chats/${activeChatId}`, {
           method: "POST",
           body: JSON.stringify(loginData),
         });
@@ -130,7 +121,7 @@ export default function ChatsPage() {
         setMessages([]);
       }
     })();
-  }, [activeChat]);
+  }, [activeChatId]);
 
   useEffect(() => {
     (async () => {
@@ -187,19 +178,19 @@ export default function ChatsPage() {
       <div className="flex flex-1">
         <ChatList
           chats={chats}
-          activeChat={activeChat}
-          setActiveChat={setActiveChat}
+          activeChat={activeChatId}
+          setActiveChat={setActiveChatId}
           openModal={() => setIsOpen(true)}
         />
 
         <ChatWindow
-          activeChat={activeChat}
+          activeChat={activeChatId}
           chats={chats}
           messages={messages}
-          newMessage={newMessage}
-          setNewMessage={setNewMessage}
-          sendMessage={sendMessage}
-          closeChat={() => setActiveChat(null)}
+          newMessage={formData.question}
+          setNewMessage={(question) => setFormData({ question })}
+          sendMessage={handleSendMessage}
+          closeChat={() => setActiveChatId(null)}
         />
       </div>
     </div>

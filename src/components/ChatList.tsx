@@ -1,5 +1,3 @@
-"use client";
-
 import clsx from "clsx";
 import { Chat } from "@/types/chat";
 import { formatTime } from "@/utils/date";

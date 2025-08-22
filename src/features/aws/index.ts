@@ -1,3 +1,4 @@
+import { string } from "@/server/shared/schema/string";
 import z from "zod";
 
 export const WS_ACTION = "all";
@@ -8,13 +9,13 @@ export enum WsEndpoint {
 }
 
 export const awsRequestDto = z.object({
-  "aws.connectionId": z.string().nonempty(),
+  "aws.connectionId": string.nonempty(),
   body: z
     .object({
       action: z.literal(WS_ACTION),
       endpoint: z.enum(WsEndpoint),
-      username: z.string().nonempty(),
-      token: z.string().nonempty(),
+      username: string.nonempty(),
+      token: string.nonempty(),
     })
     .loose(),
 });
