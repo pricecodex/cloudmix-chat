@@ -34,15 +34,17 @@ export default function ChatsPage() {
   const { addMessageHandler, send } = useWs();
   const { getOrFail, getUsername } = useSession();
 
-  const currentChat = useMemo(() => chats.find((chat) => chat.id === activeChatId), [activeChatId]);
+  const currentChat = useMemo(() => chats.find((chat) => chat.chatId === activeChatId), [activeChatId]);
 
   useEffect(() => {
     const removeHandler = addMessageHandler(WsNotification.Message, (body) => {
+      // console.log("body", body);
       const newChats = chats.map((chat) =>
         chat.username === body.from ? { ...chat, lastMessage: body.message } : chat,
       );
       setChats(newChats);
 
+      // console.log("currentChat", currentChat);
       if (currentChat && currentChat.username === body.from) {
         setMessages((prev) => [
           ...prev,
@@ -136,12 +138,7 @@ export default function ChatsPage() {
 
         const chatsArray = Array.isArray(json.data) ? json.data : [];
 
-        const normalized = chatsArray.map((c: any) => ({
-          ...c,
-          id: c.chatId,
-        }));
-
-        setChats(normalized);
+        setChats(chatsArray);
       } catch (e) {
         console.error("Failed to fetch chats", e);
       }

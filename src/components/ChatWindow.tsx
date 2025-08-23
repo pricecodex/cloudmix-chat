@@ -28,7 +28,7 @@ export default function ChatWindow({
     );
   }
 
-  const chat = chats.find((c) => c.id === activeChat);
+  const chat = chats.find((c) => c.chatId === activeChat);
 
   function handleSendMessage(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
