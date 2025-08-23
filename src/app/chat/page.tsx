@@ -70,7 +70,7 @@ export default function ChatsPage() {
 
   const { request } = useApi();
   const {
-    mutate: sendAiMessage,
+    mutate: postAiMessage,
     formData,
     setFormData,
   } = useMutation<typeof questionDto, { answer: string }>({
@@ -81,6 +81,19 @@ export default function ChatsPage() {
 
   const sendUserMessage = (message: string, to: string) =>
     send(WsEndpoint.Message, { content: message, to, ...getOrFail() });
+
+  const sendAiMessage = async () => {
+    await postAiMessage();
+    const { isValid, result } = await postAiMessage();
+    if (!isValid || !result) {
+      return;
+    }
+    setMessages((prev) => [...prev, { createdAt: new Date().toISOString(), text: result.answer, isMine: false }]);
+    const newChats = chats.map((chat) =>
+      chat.username === AI_USERNAME ? { ...chat, lastMessage: result.answer } : chat,
+    );
+    setChats(newChats);
+  };
 
   const handleSendMessage = () => {
     const message = formData.question.trim();
