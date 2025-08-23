@@ -7,7 +7,7 @@ import useSession from "./use-session";
 const WS_ENDPOINT = `wss://${process.env.NEXT_PUBLIC_AWS_API_GATEWAY_ID}.execute-api.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_API_STAGE}`;
 
 export type WsEndpointPayload = {
-  [WsEndpoint.Connect]: {};
+  [WsEndpoint.Connect]: {} & object;
   [WsEndpoint.Message]: { content: string; to: string };
 };
 
