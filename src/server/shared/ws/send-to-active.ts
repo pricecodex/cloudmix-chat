@@ -1,5 +1,5 @@
 import { Session } from "@/entities/session/session.entity";
-import { EntitySchema } from "../db/query";
+import { EntitySchema, Query } from "../db/query";
 import { ws } from "./ws";
 import { PostToConnectionCommand } from "@aws-sdk/client-apigatewaymanagementapi";
 
@@ -7,10 +7,14 @@ export async function sendToActive(session: EntitySchema<typeof Session> | null,
   if (!session || !session.connectionId) {
     return;
   }
-  await ws.send(
-    new PostToConnectionCommand({
-      ConnectionId: session.connectionId,
-      Data: buffer,
-    }),
-  );
+  try {
+    await ws.send(
+      new PostToConnectionCommand({
+        ConnectionId: session.connectionId,
+        Data: buffer,
+      }),
+    );
+  } catch {
+    await Query.update(Session, { primaryKey: session.username }, { connectionId: null });
+  }
 }

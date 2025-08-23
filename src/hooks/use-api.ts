@@ -2,17 +2,19 @@ import z, { ZodObject } from "zod";
 import useSession from "./use-session";
 import { toast } from "sonner";
 
-export type UseApiProps<T extends ZodObject | undefined> = T extends undefined
-  ? { path: string }
-  : {
-      schema: T;
-      formData: z.infer<T>;
-      path: string;
-    };
+export type UseApiPropsWithSchema<T extends ZodObject> = {
+  schema: T;
+  formData: z.infer<T>;
+  path: string;
+};
 
-export type SchemaErrors<T extends ZodObject | undefined> = T extends undefined
-  ? object
-  : Partial<Record<keyof z.infer<T>, string>>;
+export type UseApiProps<T extends ZodObject | undefined> = T extends ZodObject
+  ? UseApiPropsWithSchema<T>
+  : { path: string };
+
+export type SchemaErrorsWithSchema<T extends ZodObject> = Partial<Record<keyof z.infer<T>, string>>;
+
+export type SchemaErrors<T extends ZodObject | undefined> = T extends ZodObject ? SchemaErrorsWithSchema<T> : object;
 
 function useApi() {
   const { get } = useSession();

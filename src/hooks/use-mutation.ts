@@ -1,16 +1,18 @@
 import { useState } from "react";
 import z, { ZodObject } from "zod";
-import useApi, { SchemaErrors, UseApiProps } from "./use-api";
+import useApi, { SchemaErrorsWithSchema, UseApiProps, UseApiPropsWithSchema } from "./use-api";
 
-// TODO try catch for sendIfActive, stale connectionid
-
-function useMutation<T extends ZodObject, R extends object = object>(props: UseApiProps<T>) {
+function useMutation<T extends ZodObject, R extends object = object>(props: UseApiPropsWithSchema<T>) {
   const { request } = useApi();
   const [formData, setFormData] = useState<z.infer<T>>(props.formData);
-  const [errors, setErrors] = useState<SchemaErrors<T>>({});
+  const [errors, setErrors] = useState<SchemaErrorsWithSchema<T>>({});
 
   async function mutate() {
-    const { errors = {}, result } = await request<T, R>({ ...props, formData });
+    const { errors = {}, result } = await request<R, T>({
+      path: props.path,
+      schema: props.schema,
+      formData,
+    } as UseApiProps<T>);
     if (Object.keys(errors).length) {
       setErrors(errors);
       return { isValid: false, result: null };
