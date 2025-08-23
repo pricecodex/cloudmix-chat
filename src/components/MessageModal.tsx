@@ -1,58 +1,84 @@
 "use client";
 
-import { useState } from "react";
 import clsx from "clsx";
+import z from "zod";
+
+import useMutation from "@/hooks/use-mutation";
+import { ApiRoute } from "@/types/route";
+
+import { sessionUsernameDto } from "@/entities/session/dtos/find-session.dto";
+import { MAX_LONG_VARCHAR } from "@/server/shared/constants";
+import { string } from "@/server/shared/schema/string";
+import { toast } from "sonner";
 
 interface MessageModalProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
 
+interface CreateChatResponse {
+  message: string;
+  data: {
+    chatId: string;
+    lastMessageDate: string;
+    lastMessage: string;
+    toUser: string;
+  };
+}
+
+const createChatDto = z.object({
+  to: sessionUsernameDto,
+  message: string.max(MAX_LONG_VARCHAR),
+});
+
 export default function MessageModal({ isOpen, setIsOpen }: MessageModalProps) {
-  const [username, setUsername] = useState("");
-  const [message, setMessage] = useState("");
+  const {
+    mutate: sendMessage,
+    formData,
+    setFormData,
+    errors,
+  } = useMutation<typeof createChatDto, CreateChatResponse>({
+    schema: createChatDto,
+    path: ApiRoute.InitChat,
+    formData: { message: "", to: "" },
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSend = async () => {
-    if (!username || !message) return;
-    console.log("Send:", { username, message });
-    setIsOpen(false);
-    setUsername("");
-    setMessage("");
-    const loginData = JSON.parse(localStorage.getItem("loginData") || "");
-
-    const res = await fetch("/api/chats", {
-      method: "POST",
-      body: JSON.stringify({ ...loginData, to: username, message }),
-    });
-    const { data } = await res.json();
-    console.log("data", data);
-    return data;
+    const { isValid, result } = await sendMessage();
+    if (isValid && result) {
+      setIsOpen(false);
+      toast.success("Message sent succesfully");
+      return result;
+    }
   };
 
   return (
     <>
-      {/* Modal */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             <h2 className="mb-4 text-lg font-semibold text-gray-800">Send a Message</h2>
 
-            {/* Username */}
             <input
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              name="to"
+              value={formData.to}
+              onChange={handleChange}
               placeholder="Username"
               className={clsx(
                 "w-full rounded-lg border border-gray-300 px-4 py-2",
                 "placeholder:text-gray-400 focus:border-purple-500 focus:outline-none",
               )}
             />
+            {errors.to && <p className="mt-1 text-sm text-red-500">{errors.to}</p>}
 
-            {/* Message */}
             <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              value={formData.message}
+              name="message"
+              onChange={handleChange}
               placeholder="Write your message..."
               rows={4}
               className={clsx(
@@ -60,8 +86,8 @@ export default function MessageModal({ isOpen, setIsOpen }: MessageModalProps) {
                 "placeholder:text-gray-400 focus:border-purple-500 focus:outline-none",
               )}
             />
+            {errors.message && <p className="mt-1 text-sm text-red-500">{errors.message}</p>}
 
-            {/* Buttons */}
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => setIsOpen(false)}

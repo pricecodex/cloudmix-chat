@@ -8,5 +8,6 @@ export enum ApiRoute {
   Register = "/api/register",
   AI = "/api/chats/ai",
   Me = "/api/me",
-  Logout = "/api/logout"
+  Logout = "/api/logout",
+  InitChat = "/api/chats",
 }
