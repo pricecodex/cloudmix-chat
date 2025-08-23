@@ -108,6 +108,10 @@ export default function ChatsPage() {
     }
 
     setMessages((prev) => [...prev, { isMine: true, createdAt: new Date().toISOString(), text: message }]);
+    const newChats = chats.map((chat) =>
+      chat.username === currentChat.username ? { ...chat, lastMessage: message } : chat,
+    );
+    setChats(newChats);
     setFormData({ question: "" });
   };
 
