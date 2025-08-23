@@ -30,6 +30,7 @@ function useWs() {
 
   function addMessageHandler<T extends WsNotification>(notification: T, handler: WsNotificationHandler<T>) {
     window.wsHandlers = window.wsHandlers ?? {};
+    window.wsHandlers[notification] = window.wsHandlers[notification] ?? [];
     window.wsHandlers?.[notification]?.push(handler as WsNotificationHandler<WsNotification>);
     return function () {
       if (!window.wsHandlers?.[notification]) {

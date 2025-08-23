@@ -13,7 +13,7 @@ import MessageModal from "@/components/MessageModal";
 import { questionDto } from "@/features/ai/dto";
 import useMutation from "@/hooks/use-mutation";
 import useSession from "@/hooks/use-session";
-import { ApiRoute } from "@/types/route";
+import { ApiRoute, ClientRoute } from "@/types/route";
 
 import { useMemo } from "react";
 
@@ -23,6 +23,9 @@ import { AI_USERNAME } from "@/server/shared/ai/constants";
 import { TOAST_MESSAGE_LIMIT } from "@/server/shared/constants";
 import { truncate } from "@/utils/text";
 import { toast } from "sonner";
+import useApi from "@/hooks/use-api";
+import { EntitySchema } from "@/server/shared/db/types";
+import { ChatMessage } from "@/entities/chat-message/chat-message.entity";
 
 export default function ChatsPage() {
   const router = useRouter();
@@ -32,19 +35,17 @@ export default function ChatsPage() {
   const [messages, setMessages] = useState<Message[]>([]);
 
   const { addMessageHandler, send } = useWs();
-  const { getOrFail, getUsername } = useSession();
+  const { remove, getOrFail, getUsername } = useSession();
 
   const currentChat = useMemo(() => chats.find((chat) => chat.chatId === activeChatId), [activeChatId]);
 
   useEffect(() => {
     const removeHandler = addMessageHandler(WsNotification.Message, (body) => {
-      // console.log("body", body);
       const newChats = chats.map((chat) =>
         chat.username === body.from ? { ...chat, lastMessage: body.message } : chat,
       );
       setChats(newChats);
 
-      // console.log("currentChat", currentChat);
       if (currentChat && currentChat.username === body.from) {
         setMessages((prev) => [
           ...prev,
@@ -65,8 +66,9 @@ export default function ChatsPage() {
     });
 
     return () => removeHandler();
-  }, []);
+  }, [chats, currentChat, setMessages, setChats]);
 
+  const { request } = useApi();
   const {
     mutate: sendAiMessage,
     formData,
@@ -100,45 +102,36 @@ export default function ChatsPage() {
     if (!activeChatId) return;
     (async () => {
       try {
-        const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
-
-        const res = await fetch(`/api/chats/${activeChatId}`, {
-          method: "POST",
-          body: JSON.stringify(loginData),
+        const { result } = await request<EntitySchema<typeof ChatMessage>[]>({
+          path: `/api/chats/${activeChatId}`,
         });
 
-        const { data } = await res.json();
+        if (!result) {
+          throw new Error("Chat messages failed to load");
+        }
 
-        const normalized = data.map((m: any) => ({
-          from: m.owner === loginData.username ? "You" : m.owner,
-          text: m.content,
-          createdAt: m.createdAt,
+        const messages = result.map((message) => ({
+          isMine: message.owner === getUsername(),
+          text: message.content,
+          createdAt: message.createdAt,
         }));
 
-        setMessages(normalized);
+        setMessages(messages);
       } catch (err) {
         console.error("Failed to fetch messages", err);
         setMessages([]);
       }
     })();
-  }, [activeChatId]);
+  }, [setMessages, activeChatId]);
 
   useEffect(() => {
     (async () => {
       try {
-        const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
-
-        const res = await fetch("/api/me", {
-          method: "POST",
-          body: JSON.stringify({ ...loginData }),
-        });
-
-        const json = await res.json();
-        console.log("Fetched chats:", json);
-
-        const chatsArray = Array.isArray(json.data) ? json.data : [];
-
-        setChats(chatsArray);
+        const { result } = await request<Chat[]>({ path: ApiRoute.Me });
+        if (!result) {
+          throw new Error("Chats failed to load");
+        }
+        setChats(result);
       } catch (e) {
         console.error("Failed to fetch chats", e);
       }
@@ -146,20 +139,12 @@ export default function ChatsPage() {
   }, []);
 
   async function handleLogout() {
-    const loginData = JSON.parse(localStorage.getItem("loginData") || "{}");
     try {
-      const res = await fetch("/api/logout", {
-        method: "POST",
-        body: JSON.stringify({ ...loginData }),
-      });
+      const { result } = await request({ path: ApiRoute.Logout });
+      if (!result) throw new Error("Failed to log out");
 
-      if (!res.ok) throw new Error("Failed to log out");
-      const json = await res.json();
-      console.log("logged out", json);
-
-      localStorage.removeItem("loginData");
-
-      router.push("/login");
+      remove();
+      router.push(ClientRoute.Login);
     } catch (err) {
       console.error("Logout error:", err);
     }
@@ -170,7 +155,7 @@ export default function ChatsPage() {
       <Header username={getUsername()} handleLogout={handleLogout} />
       <MessageModal isOpen={isOpen} setIsOpen={setIsOpen} />
 
-      <div className="flex flex-1">
+      <div className="flex h-[calc(100dvh_-_90px)] flex-1">
         <ChatList
           chats={chats}
           activeChat={activeChatId}

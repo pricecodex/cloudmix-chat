@@ -3,8 +3,9 @@ import { GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { db } from "./db";
 import { Entity } from "./entity";
+import { EntitySchema } from "./types";
 
-export type EntitySchema<T> = T extends Entity<infer Schema> ? Schema : never;
+export { type EntitySchema };
 
 export type WhenSK<T, SKCase, DefaultCase> =
   T extends Entity<infer Schema, infer PK, infer SK> ? (string extends SK ? DefaultCase : SKCase) : never;

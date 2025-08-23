@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { Chat, Message } from "@/types/chat";
+import { useEffect, useRef } from "react";
 
 type ChatWindowProps = {
   activeChat: string | null;
@@ -20,9 +21,19 @@ export default function ChatWindow({
   sendMessage,
   closeChat,
 }: ChatWindowProps) {
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!activeChat) {
+      return;
+    }
+    if (listRef.current) {
+      listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    }
+  }, [activeChat, messages]);
   if (!activeChat) {
     return (
-      <div className="hidden flex-1 items-center justify-center text-gray-400 md:flex">
+      <div className="hidden h-full flex-1 items-center justify-center text-gray-400 md:flex">
         Select a chat to start messaging
       </div>
     );
@@ -49,7 +60,7 @@ export default function ChatWindow({
         </button>
       </div>
 
-      <div className="flex-1 space-y-6 overflow-y-auto p-6 md:px-10">
+      <div ref={listRef} className="flex-1 space-y-6 overflow-y-auto p-6 md:px-10">
         {messages.map((msg, i) => (
           <div
             key={i}

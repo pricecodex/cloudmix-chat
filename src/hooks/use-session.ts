@@ -1,10 +1,14 @@
 import { AuthorizeSessionDto } from "@/entities/session/dtos/authorize-session.dto";
 
 function useSession() {
-  const KEY = "login-data";
+  const KEY = "loginData";
 
   function set(data: AuthorizeSessionDto) {
     localStorage.setItem(KEY, JSON.stringify(data));
+  }
+
+  function remove() {
+    localStorage.removeItem(KEY);
   }
 
   function get() {
@@ -36,6 +40,7 @@ function useSession() {
     get,
     set,
     getUsername,
+    remove,
   };
 }
 

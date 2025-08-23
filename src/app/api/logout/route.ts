@@ -11,5 +11,5 @@ export const POST = requestHandler(async (req: NextRequest) => {
   await authorizeSession(dto);
   await Query.remove(Session, dto.username);
 
-  return NextResponse.json({ message: "Logged out!" });
+  return NextResponse.json({ message: "Logged out!", data: { success: true } });
 });
