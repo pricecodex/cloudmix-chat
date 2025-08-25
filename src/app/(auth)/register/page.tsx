@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import useMutation from "@/hooks/use-mutation";
 import { AuthorizeSessionDto } from "@/entities/session/dtos/authorize-session.dto";
 import { findUserDto } from "@/entities/user/dtos/find-user.dto";
@@ -59,6 +60,13 @@ export default function RegisterPage() {
         <button type="submit" className="w-full rounded bg-blue-500 py-2 text-white transition hover:bg-blue-600">
           Sign Up
         </button>
+
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Already have an account?{" "}
+          <Link href="/login" className="text-blue-500 hover:underline">
+            Login here
+          </Link>
+        </p>
       </form>
     </div>
   );

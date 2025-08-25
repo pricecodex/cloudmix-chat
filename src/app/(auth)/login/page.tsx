@@ -7,6 +7,7 @@ import { AuthorizeSessionDto } from "@/entities/session/dtos/authorize-session.d
 import { findUserDto } from "@/entities/user/dtos/find-user.dto";
 import { ApiRoute, ClientRoute } from "@/types/route";
 import prevent from "@/utils/event";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -62,6 +63,13 @@ export default function LoginPage() {
         <button type="submit" className="w-full rounded bg-blue-500 py-2 text-white transition hover:bg-blue-600">
           Login
         </button>
+
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Don’t have an account?{" "}
+          <Link href="/register" className="text-blue-500 hover:underline">
+            Register here
+          </Link>
+        </p>
       </form>
     </div>
   );
